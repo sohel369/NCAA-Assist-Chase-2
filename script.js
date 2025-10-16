@@ -696,67 +696,94 @@ document.getElementById('adminPassword').addEventListener('keypress', (e) => {
     }
 });
 
-// Render player management interface
+// Render player management interface - Only Braden Smith
 function renderPlayerManagement() {
     playerManagement.innerHTML = '';
 
-    players.forEach((player, index) => {
+    // Only show Braden Smith (the tracked player)
+    const trackedPlayer = players.find(p => p.isTracking);
+    if (trackedPlayer) {
         const playerCard = document.createElement('div');
         playerCard.className = 'admin-card';
         playerCard.innerHTML = `
+          <div class="player-header">
+            <div>
+              <div class="player-name">${trackedPlayer.name}</div>
+              <div class="player-role">${trackedPlayer.team}</div>
+            </div>
+            <span class="highlight-badge">★ Premium</span>
+          </div>
+          <div class="player-stats">
+            <div class="stat-item">
+              <div class="stat-label">Assists</div>
+              <div class="stat-value">${trackedPlayer.assists}</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Current Rank</div>
+              <div class="stat-value">${players.sort((a, b) => b.assists - a.assists).findIndex(p => p.isTracking) + 1}</div>
+            </div>
+          </div>
           <div class="admin-form">
-            <input type="text" value="${player.name}" class="admin-input player-name-input" data-id="${player.id}" placeholder="Player Name">
-            <input type="text" value="${player.team}" class="admin-input player-team-input" data-id="${player.id}" placeholder="Team">
-            <input type="number" value="${player.assists}" class="admin-input player-assists-input" data-id="${player.id}" min="0" placeholder="Assists">
-            <input type="url" value="${player.image || ''}" class="admin-input player-image-input" data-id="${player.id}" placeholder="Image URL">
-            <button class="admin-btn btn-update" onclick="updatePlayer('${player.id}')">Update</button>
-            <button class="admin-btn btn-delete" onclick="deletePlayer('${player.id}')">Delete</button>
+            <input type="text" value="${trackedPlayer.name}" class="admin-input player-name-input" data-id="${trackedPlayer.id}" placeholder="Player Name" readonly>
+            <input type="text" value="${trackedPlayer.team}" class="admin-input player-team-input" data-id="${trackedPlayer.id}" placeholder="Team" readonly>
+            <input type="number" value="${trackedPlayer.assists}" class="admin-input player-assists-input" data-id="${trackedPlayer.id}" min="0" placeholder="Assists">
+            <input type="url" value="${trackedPlayer.image || ''}" class="admin-input player-image-input" data-id="${trackedPlayer.id}" placeholder="Image URL">
+            <button class="action-btn btn-update" onclick="updatePlayer('${trackedPlayer.id}')">Update Stats</button>
+            <button class="action-btn btn-undo" onclick="undoLastChange()" id="undoButton" style="display: none;">Undo</button>
           </div>
         `;
         playerManagement.appendChild(playerCard);
-    });
+    }
 }
 
-// Update player function
+// Store previous values for undo functionality
+let lastPlayerUpdate = null;
+
+// Update player function - Only for Braden Smith
 function updatePlayer(playerId) {
     const playerIndex = players.findIndex(p => p.id === playerId);
     if (playerIndex === -1) return;
 
-    const nameInput = document.querySelector(`.player-name-input[data-id="${playerId}"]`);
-    const teamInput = document.querySelector(`.player-team-input[data-id="${playerId}"]`);
     const assistsInput = document.querySelector(`.player-assists-input[data-id="${playerId}"]`);
     const imageInput = document.querySelector(`.player-image-input[data-id="${playerId}"]`);
 
-    const newName = nameInput.value.trim();
-    const newTeam = teamInput.value.trim();
     const newAssists = parseInt(assistsInput.value) || 0;
-    const newImage = imageInput.value.trim() || `https://ui-avatars.com/api/?name=${encodeURIComponent(newName)}&background=random`;
-
-    if (!newName) {
-        alert('Player name cannot be empty!');
-        return;
-    }
+    const newImage = imageInput.value.trim() || players[playerIndex].image;
 
     if (newAssists < 0) {
-        alert('Assists cannot be negative!');
+        showNotification('Assists cannot be negative!', 'error');
         return;
     }
 
-    // Update player data
-    players[playerIndex] = {
-        ...players[playerIndex],
-        name: newName,
-        team: newTeam,
-        assists: newAssists,
-        image: newImage
+    // Store previous values for undo
+    lastPlayerUpdate = {
+        playerId: playerId,
+        oldAssists: players[playerIndex].assists,
+        oldImage: players[playerIndex].image,
+        newAssists: newAssists,
+        newImage: newImage
     };
+
+    // Update player data
+    players[playerIndex].assists = newAssists;
+    players[playerIndex].image = newImage;
 
     // Update the main dashboard
     updateStats();
     renderCourt();
     renderLeaderboard();
+    updateChart();
+
+    // Show undo button
+    const undoBtn = document.getElementById('undoButton');
+    if (undoBtn) {
+        undoBtn.style.display = 'inline-block';
+    }
 
     // Show success feedback
+    showNotification('Stats updated successfully!', 'success');
+    
+    // Visual confirmation
     const updateBtn = document.querySelector(`.btn-update[onclick="updatePlayer('${playerId}')"]`);
     const originalText = updateBtn.textContent;
     updateBtn.textContent = '✓ Updated!';
@@ -768,105 +795,71 @@ function updatePlayer(playerId) {
     }, 2000);
 }
 
-// Delete player function
-function deletePlayer(playerId) {
-    if (confirm('Are you sure you want to delete this player?')) {
-        const playerIndex = players.findIndex(p => p.id === playerId);
-        if (playerIndex === -1) return;
+// Undo last change function
+function undoLastChange() {
+    if (lastPlayerUpdate) {
+        const playerIndex = players.findIndex(p => p.id === lastPlayerUpdate.playerId);
+        if (playerIndex !== -1) {
+            players[playerIndex].assists = lastPlayerUpdate.oldAssists;
+            players[playerIndex].image = lastPlayerUpdate.oldImage;
 
-        const playerName = players[playerIndex].name;
-        players.splice(playerIndex, 1);
+            // Update form inputs
+            const assistsInput = document.querySelector(`.player-assists-input[data-id="${lastPlayerUpdate.playerId}"]`);
+            const imageInput = document.querySelector(`.player-image-input[data-id="${lastPlayerUpdate.playerId}"]`);
+            
+            if (assistsInput) assistsInput.value = lastPlayerUpdate.oldAssists;
+            if (imageInput) imageInput.value = lastPlayerUpdate.oldImage;
 
-        // Update the main dashboard
-        updateStats();
-        renderCourt();
-        renderLeaderboard();
-        renderPlayerManagement();
+            // Update the main dashboard
+            updateStats();
+            renderCourt();
+            renderLeaderboard();
+            updateChart();
 
-        // Show success feedback
-        alert(`${playerName} has been deleted successfully!`);
+            // Hide undo button
+            const undoBtn = document.getElementById('undoButton');
+            if (undoBtn) {
+                undoBtn.style.display = 'none';
+            }
+
+            // Clear undo data
+            lastPlayerUpdate = null;
+
+            showNotification('Changes undone successfully!', 'success');
+        }
     }
 }
 
-// Add new player functionality
-document.getElementById('addNewPlayer').addEventListener('click', () => {
-    const nameInput = document.getElementById('newPlayerName');
-    const teamInput = document.getElementById('newPlayerTeam');
-    const assistsInput = document.getElementById('newPlayerAssists');
-    const imageInput = document.getElementById('newPlayerImage');
-
-    const name = nameInput.value.trim();
-    const team = teamInput.value.trim();
-    const assists = parseInt(assistsInput.value) || 0;
-    const image = imageInput.value.trim() || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
-
-    // Validation
-    if (!name) {
-        alert('Player name is required!');
-        nameInput.focus();
-        return;
-    }
-
-    if (assists < 0) {
-        alert('Assists cannot be negative!');
-        assistsInput.focus();
-        return;
-    }
-
-    // Check if player already exists
-    if (players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-        alert('A player with this name already exists!');
-        nameInput.focus();
-        return;
-    }
-
-    // Add new player
-    const newPlayer = {
-        id: 'player_' + Date.now(),
-        name: name,
-        team: team || 'Unknown Team',
-        assists: assists,
-        image: image,
-        color: `hsl(${Math.random() * 360}, 70%, 60%)`
+// Notification system
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+    
+    const colors = {
+        success: 'bg-green-500 text-white',
+        error: 'bg-red-500 text-white',
+        info: 'bg-blue-500 text-white'
     };
-
-    players.push(newPlayer);
-
-    // Update the main dashboard
-    updateStats();
-    renderCourt();
-    renderLeaderboard();
-    renderPlayerManagement();
-
-    // Clear form
-    nameInput.value = '';
-    teamInput.value = '';
-    assistsInput.value = '';
-    imageInput.value = '';
-
-    // Show success feedback
-    const addBtn = document.getElementById('addNewPlayer');
-    const originalText = addBtn.textContent;
-    addBtn.textContent = '✓ Added!';
-    addBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-
+    
+    notification.className += ` ${colors[type] || colors.info}`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
     setTimeout(() => {
-        addBtn.textContent = originalText;
-        addBtn.style.background = '';
-    }, 2000);
+        notification.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Auto remove
+    setTimeout(() => {
+        notification.classList.add('translate-x-full');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
 
-    alert(`${name} has been added successfully!`);
-});
-
-// Enter key support for add player form
-document.getElementById('newPlayerName').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') document.getElementById('addNewPlayer').click();
-});
-
-document.getElementById('newPlayerTeam').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') document.getElementById('addNewPlayer').click();
-});
-
-document.getElementById('newPlayerAssists').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') document.getElementById('addNewPlayer').click();
-});
+// Removed delete and add player functionality - only Braden Smith can be managed
