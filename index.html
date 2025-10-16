@@ -1,0 +1,2466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NCAA Assist Tracker - Braden Smith</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+    * {
+      font-family: 'Inter', sans-serif;
+    }
+    
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+    
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 20% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 60%);
+      animation: gradientFloat 15s ease-in-out infinite;
+      pointer-events: none;
+    }
+    
+    /* Floating Particles */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        radial-gradient(2px 2px at 20px 30px, rgba(255, 255, 255, 0.1), transparent),
+        radial-gradient(2px 2px at 40px 70px, rgba(139, 92, 246, 0.2), transparent),
+        radial-gradient(1px 1px at 90px 40px, rgba(236, 72, 153, 0.2), transparent),
+        radial-gradient(1px 1px at 130px 80px, rgba(59, 130, 246, 0.2), transparent),
+        radial-gradient(2px 2px at 160px 30px, rgba(255, 255, 255, 0.1), transparent);
+      background-repeat: repeat;
+      background-size: 200px 100px;
+      animation: particleFloat 20s linear infinite;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    @keyframes particleFloat {
+      0% { transform: translateY(0px) translateX(0px); }
+      33% { transform: translateY(-30px) translateX(10px); }
+      66% { transform: translateY(20px) translateX(-5px); }
+      100% { transform: translateY(0px) translateX(0px); }
+    }
+    
+    @keyframes gradientFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(5%, -5%) scale(1.1); }
+      66% { transform: translate(-5%, 5%) scale(0.9); }
+    }
+    
+    .glass-card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 
+        0 20px 50px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .glass-card:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 
+        0 30px 60px rgba(0, 0, 0, 0.6),
+        0 0 30px rgba(139, 92, 246, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .stat-card {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .stat-card:hover::before {
+      left: 100%;
+    }
+
+    .number-counter {
+      display: inline-block;
+      transition: all 0.3s ease;
+    }
+
+    .number-counter.animate {
+      animation: numberPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes numberPop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); color: #fbbf24; }
+      100% { transform: scale(1); }
+    }
+    
+    .premium-gradient {
+      background: linear-gradient(135deg, #8b5cf6, #ec4899, #f59e0b);
+      background-size: 200% 200%;
+      animation: gradientShift 4s ease infinite;
+    }
+    
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    
+    .shine-effect {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .shine-effect::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      animation: shine 3s infinite;
+    }
+    
+    @keyframes shine {
+      0% { left: -100%; }
+      50%, 100% { left: 100%; }
+    }
+    
+    .court-bg {
+      background: 
+        linear-gradient(to bottom, rgba(217, 119, 6, 0.1), rgba(180, 83, 9, 0.2)),
+        repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255, 255, 255, 0.02) 50px, rgba(255, 255, 255, 0.02) 51px);
+      border: 3px solid rgba(217, 119, 6, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .basketball {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background: radial-gradient(circle at 30% 30%, #ff6b35, #d97706);
+      border-radius: 50%;
+      animation: basketballBounce 3s ease-in-out infinite;
+      z-index: 10;
+    }
+
+    .basketball::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 35px;
+      height: 35px;
+      border: 2px solid rgba(0, 0, 0, 0.3);
+      border-radius: 50%;
+    }
+
+    .basketball::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(45deg);
+      width: 35px;
+      height: 2px;
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    @keyframes basketballBounce {
+      0%, 100% { 
+        transform: translate(0, 0) rotate(0deg);
+        left: 20px;
+        top: 20px;
+      }
+      25% { 
+        transform: translate(50px, -30px) rotate(90deg);
+        left: 70px;
+        top: 10px;
+      }
+      50% { 
+        transform: translate(100px, 0) rotate(180deg);
+        left: 120px;
+        top: 20px;
+      }
+      75% { 
+        transform: translate(150px, -20px) rotate(270deg);
+        left: 170px;
+        top: 15px;
+      }
+    }
+    
+    .player-marker {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+    
+    .player-marker:hover {
+      transform: scale(1.2) translateY(-5px);
+      filter: brightness(1.2);
+    }
+
+    .player-image-container {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 20;
+    }
+
+    .player-marker:hover .player-image-container {
+      transform: translateX(-50%) scale(1.1) translateY(-5px);
+    }
+
+    .player-image-container img {
+      transition: all 0.3s ease;
+    }
+
+    .player-marker:hover .player-image-container img {
+      transform: scale(1.05);
+    }
+    
+    .tracked-player {
+      animation: pulse-ring 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse-ring {
+      0%, 100% {
+        box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7),
+                    0 0 20px rgba(234, 179, 8, 0.4);
+      }
+      50% {
+        box-shadow: 0 0 0 15px rgba(234, 179, 8, 0),
+                    0 0 30px rgba(234, 179, 8, 0.6);
+      }
+    }
+    
+    .stat-animate {
+      animation: statPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    @keyframes statPop {
+      0% { transform: scale(0.8); opacity: 0; }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    
+    .slide-in {
+      animation: slideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      opacity: 0;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideOut {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+    }
+    
+    .modal-backdrop {
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .modal-content {
+      animation: modalSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    @keyframes modalSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(50px) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    
+    .progress-bar-fill {
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 
+        0 0 20px rgba(139, 92, 246, 0.5),
+        0 0 40px rgba(236, 72, 153, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    
+    .progress-bar-fill::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      animation: progressShine 2s infinite;
+    }
+
+    .progress-bar-fill::after {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      bottom: -2px;
+      right: -2px;
+      background: linear-gradient(135deg, #8b5cf6, #ec4899, #f59e0b);
+      border-radius: inherit;
+      z-index: -1;
+      filter: blur(8px);
+      opacity: 0.6;
+      animation: progressGlow 3s ease-in-out infinite;
+    }
+    
+    @keyframes progressShine {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    @keyframes progressGlow {
+      0%, 100% { 
+        opacity: 0.6;
+        transform: scale(1);
+      }
+      50% { 
+        opacity: 0.8;
+        transform: scale(1.05);
+      }
+    }
+    
+    .tooltip {
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+      pointer-events: none;
+    }
+    
+    .player-marker:hover .tooltip {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    /* Celebration Animations */
+    .celebration {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: #f59e0b;
+      animation: confettiFall 3s linear infinite;
+    }
+
+    .confetti:nth-child(2n) { background: #8b5cf6; }
+    .confetti:nth-child(3n) { background: #ec4899; }
+    .confetti:nth-child(4n) { background: #10b981; }
+    .confetti:nth-child(5n) { background: #f97316; }
+
+    @keyframes confettiFall {
+      0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
+
+    .milestone-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      background: linear-gradient(135deg, #8b5cf6, #ec4899);
+      color: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      font-size: 1.5rem;
+      font-weight: bold;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      z-index: 1001;
+      animation: milestonePop 2s ease-out forwards;
+    }
+
+    @keyframes milestonePop {
+      0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+      }
+      20% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 1;
+      }
+      40% {
+        transform: translate(-50%, -50%) scale(0.9);
+      }
+      60% {
+        transform: translate(-50%, -50%) scale(1.05);
+      }
+      80% {
+        transform: translate(-50%, -50%) scale(0.98);
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0;
+      }
+    }
+
+    .fireworks {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .fireworks::before,
+    .fireworks::after {
+      content: '';
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      animation: firework 1s ease-out forwards;
+    }
+
+    .fireworks::before {
+      background: #f59e0b;
+      animation-delay: 0s;
+    }
+
+    .fireworks::after {
+      background: #8b5cf6;
+      animation-delay: 0.1s;
+    }
+
+    @keyframes firework {
+      0% {
+        transform: scale(0);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(20);
+        opacity: 0;
+      }
+    }
+
+    /* Leaderboard Entry Animations */
+    .leaderboard-entry {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .leaderboard-entry:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .rank-badge {
+      transition: all 0.3s ease;
+    }
+
+    .leaderboard-entry:hover .rank-badge {
+      transform: scale(1.1) rotate(5deg);
+    }
+
+    .player-name {
+      transition: all 0.3s ease;
+    }
+
+    .leaderboard-entry:hover .player-name {
+      color: #fbbf24;
+    }
+
+    .assist-number {
+      transition: all 0.3s ease;
+    }
+
+    .leaderboard-entry:hover .assist-number {
+      transform: scale(1.1);
+      color: #8b5cf6;
+    }
+
+    /* Admin Panel Styles */
+    .admin-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .admin-toggle:hover {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(236, 72, 153, 0.3));
+      border-color: rgba(139, 92, 246, 0.5);
+      box-shadow: 0 0 30px rgba(139, 92, 246, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .admin-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.95);
+      backdrop-filter: blur(20px);
+      z-index: 2000;
+      display: none;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .admin-panel.active {
+      display: block;
+      animation: adminSlideIn 0.3s ease-out;
+    }
+
+    @keyframes adminSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .admin-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+
+    .admin-header {
+      background: linear-gradient(135deg, #8b5cf6, #ec4899);
+      padding: 30px;
+      text-align: center;
+      position: relative;
+    }
+
+    .admin-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+      opacity: 0.3;
+    }
+
+    .admin-title {
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: white;
+      margin: 0;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      position: relative;
+      z-index: 1;
+    }
+
+    .admin-subtitle {
+      font-size: 1.1rem;
+      color: rgba(255, 255, 255, 0.8);
+      margin-top: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .admin-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+
+    .admin-close:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+    }
+
+    .admin-close:active {
+      transform: scale(0.95);
+    }
+
+    .admin-body {
+      padding: 40px;
+    }
+
+    .admin-section {
+      margin-bottom: 40px;
+    }
+
+    .section-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #fbbf24;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title::before {
+      content: '⚙️';
+      font-size: 1.5rem;
+    }
+
+    .admin-grid {
+      display: grid;
+      gap: 20px;
+    }
+
+    .admin-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 25px;
+      transition: all 0.3s ease;
+    }
+
+    .admin-card:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(139, 92, 246, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .admin-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr 100px 1fr auto auto;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .admin-input {
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      color: white;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .admin-input:focus {
+      outline: none;
+      background: rgba(255, 255, 255, 0.1);
+      border-color: #8b5cf6;
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+    }
+
+    .admin-input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .admin-btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+    }
+
+    .btn-update {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+    }
+
+    .btn-update:hover {
+      background: linear-gradient(135deg, #059669, #047857);
+      transform: scale(1.05);
+      box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-delete {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+    }
+
+    .btn-delete:hover {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      transform: scale(1.05);
+      box-shadow: 0 5px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    .add-player-section {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1));
+      border: 2px solid rgba(139, 92, 246, 0.3);
+      border-radius: 16px;
+      padding: 25px;
+      margin-top: 20px;
+    }
+
+    .add-player-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #8b5cf6;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .add-player-title::before {
+      content: '➕';
+      font-size: 1.2rem;
+    }
+
+    .add-player-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr 100px 1fr auto;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .btn-add {
+      background: linear-gradient(135deg, #8b5cf6, #ec4899);
+      color: white;
+    }
+
+    .btn-add:hover {
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      transform: scale(1.05);
+      box-shadow: 0 5px 20px rgba(139, 92, 246, 0.4);
+    }
+
+    .password-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      z-index: 3000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .password-modal.active {
+      display: flex;
+    }
+
+    .password-content {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 40px;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .password-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #fbbf24;
+      margin-bottom: 20px;
+    }
+
+    .password-input {
+      width: 100%;
+      padding: 15px 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      color: white;
+      font-size: 16px;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .password-input:focus {
+      outline: none;
+      background: rgba(255, 255, 255, 0.1);
+      border-color: #8b5cf6;
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+    }
+
+    .password-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+    }
+
+    .btn-cancel {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+    }
+
+    .btn-cancel:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-submit {
+      background: linear-gradient(135deg, #8b5cf6, #ec4899);
+      color: white;
+    }
+
+    .btn-submit:hover {
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+    }
+
+    /* Enhanced Responsive Design */
+    @media (max-width: 1200px) {
+      .admin-content {
+        max-width: 95%;
+        margin: 10px auto;
+      }
+      
+      .admin-form {
+        grid-template-columns: 1fr 1fr 80px 1fr auto auto;
+        gap: 12px;
+      }
+      
+      .add-player-form {
+        grid-template-columns: 1fr 1fr 80px 1fr auto;
+        gap: 12px;
+      }
+    }
+
+    @media (max-width: 992px) {
+      .admin-body {
+        padding: 30px;
+      }
+      
+      .admin-form {
+        grid-template-columns: 1fr 1fr 70px 1fr auto auto;
+        gap: 10px;
+      }
+      
+      .add-player-form {
+        grid-template-columns: 1fr 1fr 70px 1fr auto;
+        gap: 10px;
+      }
+      
+      .admin-input {
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+      
+      .admin-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .court-bg {
+        height: 200px !important;
+      }
+      
+      .admin-toggle {
+        top: 10px;
+        right: 10px;
+        padding: 8px 16px;
+        font-size: 14px;
+      }
+      
+      .admin-panel {
+        padding: 10px;
+      }
+      
+      .admin-content {
+        max-width: 100%;
+        margin: 0;
+        border-radius: 16px;
+      }
+      
+      .admin-header {
+        padding: 20px;
+      }
+      
+      .admin-title {
+        font-size: 1.8rem;
+      }
+      
+      .admin-subtitle {
+        font-size: 1rem;
+      }
+      
+      .admin-close {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+        top: 15px;
+        right: 15px;
+      }
+      
+      .admin-body {
+        padding: 20px;
+      }
+      
+      .admin-form,
+      .add-player-form {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      
+      .admin-form {
+        grid-template-rows: auto auto auto auto auto;
+      }
+      
+      .add-player-form {
+        grid-template-rows: auto auto auto auto auto;
+      }
+      
+      .section-title {
+        font-size: 1.4rem;
+        margin-bottom: 15px;
+      }
+      
+      .admin-card {
+        padding: 20px;
+      }
+      
+      .add-player-section {
+        padding: 20px;
+        margin-top: 15px;
+      }
+      
+      .add-player-title {
+        font-size: 1.1rem;
+        margin-bottom: 15px;
+      }
+      
+      .password-content {
+        padding: 30px 20px;
+        margin: 20px;
+      }
+      
+      .password-title {
+        font-size: 1.5rem;
+      }
+      
+      .password-input {
+        padding: 12px 16px;
+        font-size: 16px;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .admin-toggle {
+        top: 8px;
+        right: 8px;
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+      
+      .admin-panel {
+        padding: 5px;
+      }
+      
+      .admin-content {
+        border-radius: 12px;
+      }
+      
+      .admin-header {
+        padding: 15px;
+      }
+      
+      .admin-title {
+        font-size: 1.5rem;
+      }
+      
+      .admin-subtitle {
+        font-size: 0.9rem;
+      }
+      
+      .admin-close {
+        width: 35px;
+        height: 35px;
+        font-size: 18px;
+        top: 10px;
+        right: 10px;
+      }
+      
+      .admin-body {
+        padding: 15px;
+      }
+      
+      .admin-form,
+      .add-player-form {
+        gap: 10px;
+      }
+      
+      .admin-input {
+        padding: 8px 10px;
+        font-size: 14px;
+      }
+      
+      .admin-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+      
+      .section-title {
+        font-size: 1.2rem;
+        margin-bottom: 12px;
+      }
+      
+      .admin-card {
+        padding: 15px;
+      }
+      
+      .add-player-section {
+        padding: 15px;
+        margin-top: 12px;
+      }
+      
+      .add-player-title {
+        font-size: 1rem;
+        margin-bottom: 12px;
+      }
+      
+      .password-content {
+        padding: 25px 15px;
+        margin: 15px;
+      }
+      
+      .password-title {
+        font-size: 1.3rem;
+      }
+      
+      .password-input {
+        padding: 10px 12px;
+        font-size: 16px;
+      }
+      
+      .password-buttons {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .password-buttons .admin-btn {
+        width: 100%;
+        padding: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .admin-toggle {
+        top: 5px;
+        right: 5px;
+        padding: 5px 10px;
+        font-size: 11px;
+      }
+      
+      .admin-panel {
+        padding: 2px;
+      }
+      
+      .admin-content {
+        border-radius: 8px;
+      }
+      
+      .admin-header {
+        padding: 12px;
+      }
+      
+      .admin-title {
+        font-size: 1.3rem;
+      }
+      
+      .admin-subtitle {
+        font-size: 0.8rem;
+      }
+      
+      .admin-close {
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
+        top: 8px;
+        right: 8px;
+      }
+      
+      .admin-body {
+        padding: 12px;
+      }
+      
+      .admin-form,
+      .add-player-form {
+        gap: 8px;
+      }
+      
+      .admin-input {
+        padding: 6px 8px;
+        font-size: 13px;
+      }
+      
+      .admin-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+      }
+      
+      .section-title {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+      }
+      
+      .admin-card {
+        padding: 12px;
+      }
+      
+      .add-player-section {
+        padding: 12px;
+        margin-top: 10px;
+      }
+      
+      .add-player-title {
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+      }
+      
+      .password-content {
+        padding: 20px 12px;
+        margin: 10px;
+      }
+      
+      .password-title {
+        font-size: 1.2rem;
+      }
+      
+      .password-input {
+        padding: 8px 10px;
+        font-size: 14px;
+      }
+    }
+
+    /* Landscape orientation fixes */
+    @media (max-height: 600px) and (orientation: landscape) {
+      .admin-panel {
+        padding: 5px;
+      }
+      
+      .admin-content {
+        max-height: 95vh;
+        overflow-y: auto;
+      }
+      
+      .admin-header {
+        padding: 15px;
+      }
+      
+      .admin-title {
+        font-size: 1.5rem;
+      }
+      
+      .admin-body {
+        padding: 15px;
+      }
+      
+      .admin-form,
+      .add-player-form {
+        grid-template-columns: 1fr 1fr 60px auto auto;
+        gap: 8px;
+      }
+      
+      .add-player-form {
+        grid-template-columns: 1fr 1fr 60px auto;
+      }
+      
+      .admin-input {
+        padding: 6px 8px;
+        font-size: 12px;
+      }
+      
+      .admin-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+      }
+    }
+
+    /* Touch device optimizations */
+    @media (hover: none) and (pointer: coarse) {
+      .admin-toggle,
+      .admin-btn,
+      .admin-close {
+        min-height: 44px;
+        min-width: 44px;
+      }
+      
+      .admin-input {
+        min-height: 44px;
+      }
+      
+      .admin-toggle:hover,
+      .admin-btn:hover,
+      .admin-close:hover {
+        transform: none;
+      }
+    }
+
+    /* Chart animations */
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+  <!-- Admin Toggle Button -->
+  <button class="admin-toggle" id="adminToggle">
+    🔐 Admin Access
+  </button>
+
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="text-center mb-8 slide-in">
+      <div class="inline-flex items-center gap-3 mb-4">
+        <span class="text-5xl animate-bounce">🏆</span>
+        <h1 class="text-4xl md:text-6xl font-black text-white tracking-tight">
+          NCAA Assist Chase
+        </h1>
+        <span class="text-5xl animate-bounce">🏆</span>
+      </div>
+      <p class="text-purple-300 text-lg font-semibold">
+        Tracking <span class="text-yellow-400">Braden Smith</span>'s Path to History
+      </p>
+    </div>
+
+    <!-- Key Stats Grid -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div class="glass-card stat-card rounded-2xl p-6 slide-in" style="animation-delay: 0.1s">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-2xl animate-bounce">🎯</span>
+          <p class="text-purple-300 text-xs md:text-sm font-bold uppercase tracking-wide">Current Rank</p>
+        </div>
+        <p class="text-4xl md:text-5xl font-black text-white number-counter" id="currentRank">11</p>
+        <p class="text-sm text-gray-400 mt-1">of all-time leaders</p>
+      </div>
+
+      <div class="glass-card stat-card rounded-2xl p-6 slide-in" style="animation-delay: 0.2s">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-2xl animate-pulse">📊</span>
+          <p class="text-blue-300 text-xs md:text-sm font-bold uppercase tracking-wide">Total Assists</p>
+        </div>
+        <p class="text-4xl md:text-5xl font-black text-white number-counter" id="totalAssists">758</p>
+        <p class="text-sm text-gray-400 mt-1">career total</p>
+      </div>
+
+      <div class="glass-card stat-card rounded-2xl p-6 slide-in" style="animation-delay: 0.3s">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-2xl animate-pulse">🔥</span>
+          <p class="text-amber-300 text-xs md:text-sm font-bold uppercase tracking-wide">To Record</p>
+        </div>
+        <p class="text-4xl md:text-5xl font-black text-white number-counter" id="toRecord">318</p>
+        <p class="text-sm text-gray-400 mt-1">assists needed</p>
+      </div>
+
+      <div class="glass-card stat-card rounded-2xl p-6 slide-in" style="animation-delay: 0.4s">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-2xl animate-bounce">🎪</span>
+          <p class="text-green-300 text-xs md:text-sm font-bold uppercase tracking-wide">Next Target</p>
+        </div>
+        <p class="text-4xl md:text-5xl font-black text-white number-counter" id="nextTarget">192</p>
+        <p class="text-sm text-gray-400 mt-1">to pass next</p>
+      </div>
+    </div>
+
+    <!-- Basketball Court Visualization -->
+    <div class="glass-card rounded-3xl p-6 md:p-8 mb-8 slide-in" style="animation-delay: 0.5s">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+        <h2 class="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+          <span class="text-4xl">🏀</span>
+          Path to the Record
+        </h2>
+        <button
+          onclick="openModal()"
+          class="premium-gradient text-white px-6 py-3 rounded-xl font-bold shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 shine-effect w-full md:w-auto"
+        >
+          <span class="relative z-10">➕ Add Assists</span>
+        </button>
+      </div>
+
+      <!-- Court -->
+      <div class="court-bg rounded-2xl p-6 md:p-8 relative overflow-hidden" style="min-height: 280px;">
+        <!-- Basketball Animation -->
+        <div class="basketball"></div>
+        
+        <!-- Court Lines -->
+        <div class="absolute inset-0 pointer-events-none opacity-20">
+          <div class="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white"></div>
+          <div class="absolute left-0 right-0 top-1/2 h-0.5 bg-white"></div>
+          <div class="absolute left-1/2 top-1/2 w-20 h-20 border-2 border-white rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+        </div>
+
+        <!-- Progress Bar Container -->
+        <div class="absolute bottom-8 left-6 right-6 h-5 bg-slate-900/60 rounded-full overflow-hidden backdrop-blur-sm border border-slate-700/50">
+          <div id="progressBar" class="progress-bar-fill h-full premium-gradient rounded-full" style="width: 70.4%"></div>
+        </div>
+
+        <!-- Player Markers -->
+        <div id="courtMarkers" class="absolute bottom-20 left-6 right-6 h-16">
+          
+        </div>
+
+        <!-- Legend -->
+        <div class="absolute top-4 right-4 flex items-center gap-2 bg-slate-900/70 px-4 py-2 rounded-full backdrop-blur-sm border border-slate-700/50">
+          <span class="text-amber-400 text-sm font-bold">NCAA Record</span>
+          <span class="text-2xl">👑</span>
+        </div>
+      </div>
+
+      <!-- Progress Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+        <div class="text-center p-4 bg-slate-800/40 rounded-xl">
+          <p class="text-gray-400 text-sm mb-1">Progress</p>
+          <p class="text-2xl font-bold text-white" id="progressPercent">70.4%</p>
+        </div>
+        <div class="text-center p-4 bg-slate-800/40 rounded-xl">
+          <p class="text-gray-400 text-sm mb-1">Games Needed</p>
+          <p class="text-2xl font-bold text-white" id="gamesNeeded">58</p>
+          <p class="text-xs text-gray-500">@ 5.5 APG</p>
+        </div>
+        <div class="text-center p-4 bg-slate-800/40 rounded-xl">
+          <p class="text-gray-400 text-sm mb-1">Next Milestone</p>
+          <p class="text-2xl font-bold text-white" id="nextMilestone">800</p>
+        </div>
+        <div class="text-center p-4 bg-slate-800/40 rounded-xl">
+          <p class="text-gray-400 text-sm mb-1">Season Pace</p>
+          <p class="text-2xl font-bold text-white">6.3</p>
+          <p class="text-xs text-gray-500">APG average</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="glass-card rounded-3xl p-6 md:p-8 slide-in" style="animation-delay: 0.6s">
+      <h2 class="text-2xl md:text-3xl font-bold text-white mb-6 flex items-center gap-3">
+        <span class="text-3xl">🏆</span>
+        All-Time Leaders
+      </h2>
+      
+      <div id="leaderboard" class="space-y-3"></div>
+    </div>
+
+    <!-- Assist Tracker Chart -->
+    <div class="glass-card rounded-3xl p-6 md:p-8 slide-in mt-4" style="animation-delay: 0.7s">
+      <h2 class="text-2xl md:text-3xl font-bold text-white mb-6 flex items-center gap-3">
+        <span class="text-3xl">📈</span>
+        Career Assist Tracker
+      </h2>
+      
+      <!-- Header Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        <div class="bg-gradient-to-br from-purple-600/20 to-purple-900/20 border border-purple-500/30 rounded-lg p-3 backdrop-blur-sm">
+          <p class="text-purple-300 text-xs font-semibold uppercase tracking-wide mb-1">Career Total</p>
+          <p class="text-3xl font-black text-white" id="careerTotal">758</p>
+          <p class="text-xs text-gray-400 mt-1">assists</p>
+        </div>
+        
+        <div class="bg-gradient-to-br from-pink-600/20 to-pink-900/20 border border-pink-500/30 rounded-lg p-3 backdrop-blur-sm">
+          <p class="text-pink-300 text-xs font-semibold uppercase tracking-wide mb-1">Avg This Year</p>
+          <p class="text-3xl font-black text-white" id="avgThisYear">21.7</p>
+          <p class="text-xs text-gray-400 mt-1">per game</p>
+        </div>
+        
+        <div class="bg-gradient-to-br from-cyan-600/20 to-cyan-900/20 border border-cyan-500/30 rounded-lg p-3 backdrop-blur-sm">
+          <p class="text-cyan-300 text-xs font-semibold uppercase tracking-wide mb-1">Record Needed</p>
+          <p class="text-3xl font-black text-white" id="recordNeeded">318</p>
+          <p class="text-xs text-gray-400 mt-1">more assists</p>
+        </div>
+        
+        <div class="bg-gradient-to-br from-amber-600/20 to-amber-900/20 border border-amber-500/30 rounded-lg p-3 backdrop-blur-sm">
+          <p class="text-amber-300 text-xs font-semibold uppercase tracking-wide mb-1">Career APG</p>
+          <p class="text-3xl font-black text-white" id="careerAPG">11.6</p>
+          <p class="text-xs text-gray-400 mt-1">average</p>
+        </div>
+      </div>
+
+      <!-- Main Chart -->
+      <div class="bg-slate-950/40 border border-purple-500/10 rounded-xl p-4 backdrop-blur-sm">
+        <div class="relative">
+          <canvas id="assistChart" class="w-full h-80 md:h-96"></canvas>
+        </div>
+      </div>
+
+      <!-- Season Breakdown -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mt-6" id="seasonBreakdown">
+        <!-- Season cards will be dynamically generated here -->
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-8 text-center slide-in" style="animation-delay: 0.8s">
+      <div class="inline-flex items-center gap-3 px-6 py-3 glass-card rounded-full">
+        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+        <p class="text-gray-300 text-sm font-medium" id="lastUpdated">
+          Last updated: <span id="updateDate"></span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Panel -->
+  <div class="admin-panel" id="adminPanel">
+    <div class="admin-content">
+      <div class="admin-header">
+        <button class="admin-close" id="adminClose" title="Close Admin Panel">×</button>
+        <h1 class="admin-title">Admin Control Center</h1>
+        <p class="admin-subtitle">Manage players, stats, and dashboard settings</p>
+      </div>
+      
+      <div class="admin-body">
+        <!-- Player Management Section -->
+        <div class="admin-section">
+          <h2 class="section-title">Player Management</h2>
+          <div class="admin-grid" id="playerManagement">
+            <!-- Player rows will be dynamically generated here -->
+          </div>
+        </div>
+
+        <!-- Add New Player Section -->
+        <div class="add-player-section">
+          <h3 class="add-player-title">Add New Player</h3>
+          <div class="add-player-form">
+            <input type="text" id="newPlayerName" class="admin-input" placeholder="Player Name" required>
+            <input type="text" id="newPlayerTeam" class="admin-input" placeholder="Team Name">
+            <input type="number" id="newPlayerAssists" class="admin-input" placeholder="Assists" min="0" required>
+            <input type="url" id="newPlayerImage" class="admin-input" placeholder="Image URL">
+            <button class="admin-btn btn-add" id="addNewPlayer">Add Player</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Password Modal -->
+  <div class="password-modal" id="passwordModal">
+    <div class="password-content">
+      <h2 class="password-title">Admin Access</h2>
+      <input type="password" id="adminPassword" class="password-input" placeholder="Enter admin password">
+      <div class="password-buttons">
+        <button class="admin-btn btn-cancel" id="cancelPassword">Cancel</button>
+        <button class="admin-btn btn-submit" id="submitPassword">Access</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 modal-backdrop">
+    <div class="glass-card border-2 border-purple-500/50 rounded-2xl p-8 max-w-md w-full shadow-2xl modal-content">
+      <h3 class="text-2xl md:text-3xl font-bold text-white mb-4">Add Assists</h3>
+      <p class="text-gray-300 mb-6">
+        Update <span class="text-yellow-400 font-bold">Braden Smith</span>'s assist total
+      </p>
+      
+      <div class="mb-6">
+        <label class="block text-gray-300 text-sm font-bold mb-2">
+          Number of Assists
+        </label>
+        <input
+          type="number"
+          id="assistInput"
+          value="5"
+          min="1"
+          class="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3 text-white text-lg font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+        />
+      </div>
+
+      <div class="grid grid-cols-4 gap-2 mb-6">
+        <button onclick="setAssists(1)" class="bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg font-semibold transition-all hover:scale-105">+1</button>
+        <button onclick="setAssists(5)" class="bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg font-semibold transition-all hover:scale-105">+5</button>
+        <button onclick="setAssists(10)" class="bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg font-semibold transition-all hover:scale-105">+10</button>
+        <button onclick="setAssists(15)" class="bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg font-semibold transition-all hover:scale-105">+15</button>
+      </div>
+
+      <div class="flex gap-3">
+        <button
+          onclick="closeModal()"
+          class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-bold transition-all hover:scale-105"
+        >
+          Cancel
+        </button>
+        <button
+          onclick="addAssists()"
+          class="flex-1 premium-gradient text-white py-3 rounded-xl font-bold transition-all hover:scale-105 active:scale-95 shine-effect"
+        >
+          <span class="relative z-10">Add Assists</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Player data with images
+    let players = [
+      { id: 1, name: "Bobby Hurley", assists: 1076, team: "Duke", color: "#003087", isRecord: true, image: "hurlye.png" },
+      { id: 3, name: "Chr is Chor chi a ni", assists: 1030, team: "North Carolina", color: "#7BAFD4", image: "chorchi.png" },
+      { id: 3, name: "Ed Cota", assists: 1030, team: "North Carolina", color: "#7BAFD4", image: "cota.png" },
+      { id: 5, name: "jason Brickman", assists: 1009, team: "East Tennessee State", color: "#041E42", image: "brickman.png" },
+      { id: 7, name: "Sherman Douglas", assists: 960, team: "Syracuse", color: "#F76900", image: "she rman douglas.png" },
+      { id: 6, name: "gary payton", assists: 939, team: "Maryland", color: "#E03A3E", image: "gary payton.png" },
+      { id: 6, name: "Steve Blake", assists: 927, team: "Maryland", color: "#E03A3E", image: "steve blake.png" },
+      { id: 8, name: "AVER JOHNSON", assists: 956, team: "Marquette", color: "#003876", image: "avery johnson.png" },
+      { id: 9, name: "TJ FORD", assists: 954, team: "Kansas", color: "#0051BA", image: "ford.png" },
+      { id: 10, name: "MARKQUIS NOWEL", assists: 950, team: "Nevada-Las Vegas", color: "#CF0A2C", image: "nowel.png" },
+      { id: 11, name: "Braden Smith", assists: 758, team: "Purdue", color: "#CEB888", isTracking: true, image: "smith.png" }
+    ];
+
+    const recordHolder = players.find(p => p.isRecord);
+    const maxAssists = recordHolder.assists;
+
+    // Chart data and configuration
+    let assistChart = null;
+    let animatedData = [];
+    
+    // Real season progression data for Braden Smith
+    const chartData = [
+      { season: '2020-21', assists: 156, gamesPlayed: 32, apg: 4.9, type: 'Freshman' },
+      { season: '2021-22', assists: 295, gamesPlayed: 38, apg: 7.8, type: 'Sophomore' },
+      { season: '2022-23', assists: 449, gamesPlayed: 37, apg: 12.1, type: 'Junior' },
+      { season: '2023-24', assists: 758, gamesPlayed: 35, apg: 21.7, type: 'Senior' }
+    ];
+
+    function updateStats() {
+      const sorted = [...players].sort((a, b) => b.assists - a.assists);
+      const tracked = players.find(p => p.isTracking);
+      const currentRank = sorted.findIndex(p => p.isTracking) + 1;
+      const nextPlayer = sorted[currentRank - 2];
+      const assistsToRecord = recordHolder.assists - tracked.assists;
+      const progressPercent = ((tracked.assists / maxAssists) * 100).toFixed(1);
+
+      document.getElementById('currentRank').textContent = currentRank;
+      document.getElementById('currentRank').classList.add('stat-animate');
+      setTimeout(() => document.getElementById('currentRank').classList.remove('stat-animate'), 500);
+
+      document.getElementById('totalAssists').textContent = tracked.assists;
+      document.getElementById('toRecord').textContent = assistsToRecord;
+      document.getElementById('nextTarget').textContent = nextPlayer ? nextPlayer.assists - tracked.assists : 0;
+      document.getElementById('progressPercent').textContent = progressPercent + '%';
+      document.getElementById('gamesNeeded').textContent = Math.ceil(assistsToRecord / 5.5);
+      document.getElementById('nextMilestone').textContent = Math.ceil(tracked.assists / 100) * 100;
+      document.getElementById('progressBar').style.width = progressPercent + '%';
+    }
+
+// Add this to your script section
+
+function renderCourt() {
+  const container = document.getElementById('courtMarkers');
+  const sorted = [...players].sort((a, b) => b.assists - a.assists);
+  container.innerHTML = '';
+
+  sorted.forEach((player, idx) => {
+    const position = ((player.assists / maxAssists) * 100).toFixed(1);
+    const rank = idx + 1;
+    
+    const marker = document.createElement('div');
+    marker.className = 'player-marker absolute opacity-0';
+    marker.style.left = position + '%';
+    marker.style.bottom = '0';
+    marker.style.transform = 'translateX(-50%)';
+    marker.dataset.index = idx;
+    
+    const markerIcon = player.isRecord ? '👑' : player.isTracking ? '⭐' : rank;
+    const markerClass = player.isTracking ? 'tracked-player ring-4 ring-yellow-400 scale-125' : 
+                       player.isRecord ? 'ring-2 ring-amber-400' : 'ring-2 ring-slate-600';
+    
+    // Create player image element
+    const playerImage = document.createElement('div');
+    playerImage.className = 'player-image-container absolute -top-16 left-1/2 transform -translate-x-1/2';
+    playerImage.innerHTML = `
+      <div class="w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden border-4 border-white shadow-xl ${markerClass}">
+        <img src="${player.image}" alt="${player.name}" class="w-full h-full object-cover" 
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="w-full h-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white font-bold text-lg" style="display: none;">
+          ${player.name.split(' ').map(n => n[0]).join('')}
+        </div>
+      </div>
+    `;
+    
+    marker.appendChild(playerImage);
+    container.appendChild(marker);
+  });
+
+  // Setup Intersection Observer for scroll reveal
+  observeCourtMarkers();
+}
+
+function observeCourtMarkers() {
+  const container = document.getElementById('courtMarkers');
+  
+  const observerOptions = {
+    threshold: 0.3,
+    rootMargin: '0px 0px -50px 0px'
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        // Container is visible, animate all markers
+        const markers = entry.target.querySelectorAll('.player-marker');
+        markers.forEach((marker, idx) => {
+          setTimeout(() => {
+            marker.classList.add('animate-reveal');
+          }, idx * 100); // Stagger animation by 100ms
+        });
+        // Stop observing once animation starts
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  observer.observe(container);
+}
+
+// Add this CSS to your stylesheet
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes revealSlide {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+
+  @keyframes revealScale {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) scale(0.8);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+    }
+  }
+
+  .player-marker {
+    transition: all 0.3s ease-out;
+  }
+
+  .animate-reveal {
+    animation: revealScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+  }
+
+  /* Alternative slide animation */
+  .animate-reveal.slide {
+    animation: revealSlide 0.5s ease-out forwards !important;
+  }
+`;
+document.head.appendChild(style);
+
+    function renderLeaderboard() {
+      const container = document.getElementById('leaderboard');
+      const sorted = [...players].sort((a, b) => b.assists - a.assists);
+      container.innerHTML = '';
+
+      sorted.forEach((player, idx) => {
+        const rank = idx + 1;
+        const medals = ['🥇', '🥈', '🥉'];
+        const rankDisplay = rank <= 3 ? medals[rank - 1] : rank;
+        
+        const cardClass = player.isTracking 
+          ? 'bg-gradient-to-r from-purple-600/30 to-pink-600/30 border-2 border-purple-500/50 shadow-lg shadow-purple-500/20'
+          : player.isRecord
+          ? 'bg-gradient-to-r from-amber-600/20 to-orange-600/20 border border-amber-500/30'
+          : 'bg-slate-700/30 border border-slate-600/30 hover:bg-slate-700/50';
+
+        const row = document.createElement('div');
+        row.className = `flex items-center gap-4 p-4 md:p-5 rounded-xl transition-all duration-300 ${cardClass} leaderboard-entry`;
+        row.style.opacity = '0';
+        row.style.transform = 'translateY(30px)';
+        row.style.animationDelay = `${idx * 0.1}s`;
+        
+        row.innerHTML = `
+          <div class="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center font-bold text-lg ${
+            rank <= 3 ? 'bg-gradient-to-br from-yellow-400 to-amber-600' : 'bg-slate-600'
+          } text-white shadow-lg rank-badge">
+            ${typeof rankDisplay === 'number' ? rankDisplay : `<span class="text-2xl">${rankDisplay}</span>`}
+          </div>
+          
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <div class="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-white shadow-lg flex-shrink-0">
+              <img src="${player.image}" alt="${player.name}" class="w-full h-full object-cover" 
+                   onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+              <div class="w-full h-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-white font-bold text-sm" style="display: none;">
+                ${player.name.split(' ').map(n => n[0]).join('')}
+              </div>
+            </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+                <h3 class="font-bold text-white text-base md:text-lg truncate player-name">
+                ${player.name}
+              </h3>
+                ${player.isTracking ? '<span class="text-yellow-400 text-xl animate-pulse">⭐</span>' : ''}
+                ${player.isRecord ? '<span class="text-amber-400 text-xl animate-bounce">👑</span>' : ''}
+            </div>
+            <p class="text-gray-400 text-xs md:text-sm">${player.team}</p>
+            </div>
+          </div>
+          
+          <div class="text-right">
+            <p class="text-3xl md:text-4xl font-black text-white assist-number">${player.assists}</p>
+            <p class="text-xs text-gray-400 uppercase tracking-wide">Assists</p>
+          </div>
+        `;
+        
+        container.appendChild(row);
+        
+        // Animate entry
+        setTimeout(() => {
+          row.style.opacity = '1';
+          row.style.transform = 'translateY(0)';
+          row.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+        }, idx * 100);
+      });
+    }
+
+    function openModal() {
+      document.getElementById('modal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    }
+
+    function setAssists(value) {
+      document.getElementById('assistInput').value = value;
+    }
+
+    function createConfetti() {
+      const celebration = document.createElement('div');
+      celebration.className = 'celebration';
+      
+      for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.animationDelay = Math.random() * 3 + 's';
+        confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+        celebration.appendChild(confetti);
+      }
+      
+      document.body.appendChild(celebration);
+      setTimeout(() => celebration.remove(), 5000);
+    }
+
+    function createFireworks() {
+      for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+          const firework = document.createElement('div');
+          firework.className = 'fireworks';
+          firework.style.left = (Math.random() * 80 + 10) + '%';
+          firework.style.top = (Math.random() * 60 + 20) + '%';
+          document.body.appendChild(firework);
+          setTimeout(() => firework.remove(), 1000);
+        }, i * 200);
+      }
+    }
+
+    function showMilestonePopup(message) {
+      const popup = document.createElement('div');
+      popup.className = 'milestone-popup';
+      popup.textContent = message;
+      document.body.appendChild(popup);
+      setTimeout(() => popup.remove(), 2000);
+    }
+
+    // Undo functionality
+    let lastAssistChange = null;
+
+    function addAssists() {
+      const value = parseInt(document.getElementById('assistInput').value) || 0;
+      if (value > 0) {
+        const tracked = players.find(p => p.isTracking);
+        const oldAssists = tracked.assists;
+        tracked.assists += value;
+        
+        // Store undo information
+        lastAssistChange = {
+          playerId: tracked.id,
+          oldAssists: oldAssists,
+          newAssists: tracked.assists,
+          changeAmount: value
+        };
+        
+        // Show undo button
+        showUndoButton();
+        
+        // Check for milestones
+        const milestones = [800, 900, 1000, 1100];
+        const newMilestone = milestones.find(m => oldAssists < m && tracked.assists >= m);
+        
+        if (newMilestone) {
+          showMilestonePopup(`🎉 ${newMilestone} Assists Milestone! 🎉`);
+          createConfetti();
+          createFireworks();
+        }
+        
+        // Animate number changes
+        animateNumberChange('totalAssists', oldAssists, tracked.assists);
+        animateNumberChange('toRecord', recordHolder.assists - oldAssists, recordHolder.assists - tracked.assists);
+        
+        updateStats();
+        renderCourt();
+        renderLeaderboard();
+        updateChart();
+        closeModal();
+        
+        // Auto-refresh dashboard
+        setTimeout(() => {
+          updateStats();
+          renderCourt();
+          renderLeaderboard();
+          updateChart();
+        }, 2000);
+        
+        // Scroll to tracked player
+        setTimeout(() => {
+          const leaderboard = document.getElementById('leaderboard');
+          const trackedRow = Array.from(leaderboard.children).find(el => 
+            el.textContent.includes('Braden Smith')
+          );
+          if (trackedRow) {
+            trackedRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 100);
+      }
+    }
+
+    function undoLastAssist() {
+      if (lastAssistChange) {
+        const tracked = players.find(p => p.id === lastAssistChange.playerId);
+        if (tracked) {
+          tracked.assists = lastAssistChange.oldAssists;
+          
+          // Animate number changes
+          animateNumberChange('totalAssists', lastAssistChange.newAssists, tracked.assists);
+          animateNumberChange('toRecord', recordHolder.assists - lastAssistChange.newAssists, recordHolder.assists - tracked.assists);
+          
+          updateStats();
+          renderCourt();
+          renderLeaderboard();
+          updateChart();
+          
+          // Clear undo data
+          lastAssistChange = null;
+          hideUndoButton();
+          
+          // Show undo confirmation
+          showUndoConfirmation();
+        }
+      }
+    }
+
+    function showUndoButton() {
+      let undoBtn = document.getElementById('undoButton');
+      if (!undoBtn) {
+        undoBtn = document.createElement('button');
+        undoBtn.id = 'undoButton';
+        undoBtn.className = 'fixed top-20 right-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold transition-all duration-300 z-50';
+        undoBtn.innerHTML = '↶ Undo Last Assist';
+        undoBtn.onclick = undoLastAssist;
+        document.body.appendChild(undoBtn);
+      }
+      undoBtn.style.display = 'block';
+      undoBtn.style.animation = 'slideIn 0.3s ease-out';
+    }
+
+    function hideUndoButton() {
+      const undoBtn = document.getElementById('undoButton');
+      if (undoBtn) {
+        undoBtn.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => {
+          undoBtn.style.display = 'none';
+        }, 300);
+      }
+    }
+
+    function showUndoConfirmation() {
+      const confirmation = document.createElement('div');
+      confirmation.className = 'fixed top-20 right-4 bg-green-500 text-white px-4 py-2 rounded-lg font-bold z-50';
+      confirmation.innerHTML = '✓ Assist Undone';
+      document.body.appendChild(confirmation);
+      
+      setTimeout(() => {
+        confirmation.remove();
+      }, 2000);
+    }
+
+    function animateNumberChange(elementId, start, end) {
+      const element = document.getElementById(elementId);
+      const duration = 1000;
+      const startTime = performance.now();
+      
+      function updateNumber(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const current = Math.floor(start + (end - start) * progress);
+        
+        element.textContent = current;
+        element.classList.add('animate');
+        
+        if (progress < 1) {
+          requestAnimationFrame(updateNumber);
+        } else {
+          setTimeout(() => element.classList.remove('animate'), 600);
+        }
+      }
+      
+      requestAnimationFrame(updateNumber);
+    }
+
+    // Chart functions
+    function initChart() {
+      const ctx = document.getElementById('assistChart').getContext('2d');
+      
+      // Animate data in progressively
+      chartData.forEach((item, index) => {
+        setTimeout(() => {
+          animatedData.push(item);
+          updateChart();
+          updateSeasonBreakdown();
+        }, index * 300);
+      });
+      
+      assistChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: animatedData.map(d => d.season),
+          datasets: [{
+            label: 'Career Assists',
+            data: animatedData.map(d => d.assists),
+            borderColor: '#8b5cf6',
+            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#8b5cf6',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 8
+          }, {
+            label: 'Assists Per Game',
+            data: animatedData.map(d => d.apg),
+            borderColor: '#ec4899',
+            backgroundColor: 'rgba(236, 72, 153, 0.1)',
+            borderWidth: 2.5,
+            fill: false,
+            tension: 0.4,
+            pointBackgroundColor: '#ec4899',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            borderDash: [5, 5]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {
+                color: '#ffffff',
+                font: {
+                  size: 14,
+                  weight: 'bold'
+                }
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: '#ffffff',
+              bodyColor: '#ffffff',
+              borderColor: '#8b5cf6',
+              borderWidth: 1,
+              cornerRadius: 8,
+              callbacks: {
+                title: function(context) {
+                  const data = context[0].raw;
+                  return context[0].label;
+                },
+                label: function(context) {
+                  const data = chartData[context.dataIndex];
+                  return [
+                    `Total Assists: ${data.assists}`,
+                    `Games: ${data.gamesPlayed}`,
+                    `APG: ${data.apg}`
+                  ];
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: '#9ca3af',
+                font: {
+                  size: 12,
+                  weight: 'bold'
+                }
+              },
+              grid: {
+                color: 'rgba(139, 92, 246, 0.1)',
+                drawBorder: false
+              }
+            },
+            y: {
+              ticks: {
+                color: '#9ca3af',
+                font: {
+                  size: 12,
+                  weight: 'bold'
+                }
+              },
+              grid: {
+                color: 'rgba(139, 92, 246, 0.1)',
+                drawBorder: false
+              }
+            }
+          },
+          animation: {
+            duration: 1000,
+            easing: 'easeInOutQuart'
+          }
+        }
+      });
+    }
+
+    function updateChart() {
+      if (assistChart) {
+        const tracked = players.find(p => p.isTracking);
+        // Update the current season data
+        chartData[3].assists = tracked.assists;
+        chartData[3].apg = (tracked.assists / 35).toFixed(1); // Assuming 35 games this season
+        
+        assistChart.data.labels = animatedData.map(d => d.season);
+        assistChart.data.datasets[0].data = animatedData.map(d => d.assists);
+        assistChart.data.datasets[1].data = animatedData.map(d => d.apg);
+        assistChart.update('active');
+        
+        // Update header stats
+        updateHeaderStats();
+      }
+    }
+
+    function updateHeaderStats() {
+      const tracked = players.find(p => p.isTracking);
+      const recordNeeded = recordHolder.assists - tracked.assists;
+      const careerAPG = (tracked.assists / 4).toFixed(1);
+      
+      document.getElementById('careerTotal').textContent = tracked.assists;
+      document.getElementById('recordNeeded').textContent = recordNeeded;
+      document.getElementById('careerAPG').textContent = careerAPG;
+    }
+
+    function updateSeasonBreakdown() {
+      const container = document.getElementById('seasonBreakdown');
+      container.innerHTML = '';
+      
+      animatedData.forEach((season, idx) => {
+        const card = document.createElement('div');
+        card.className = 'bg-gradient-to-br from-slate-800/60 to-slate-900/60 border border-purple-500/20 rounded-lg p-4 backdrop-blur-sm hover:border-purple-500/50 transition-all duration-300';
+        card.style.animation = `slideUp 0.6s ease-out ${idx * 150}ms both`;
+        
+        card.innerHTML = `
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-purple-300 font-bold text-sm">${season.type}</span>
+            <span class="text-amber-400 text-lg">📊</span>
+          </div>
+          <p class="text-white font-bold text-2xl mb-1">${season.assists}</p>
+          <p class="text-gray-400 text-xs mb-2">${season.season}</p>
+          <div class="flex justify-between text-xs">
+            <span class="text-gray-500">${season.gamesPlayed} GP</span>
+            <span class="text-pink-400 font-semibold">${season.apg} APG</span>
+          </div>
+        `;
+        
+        container.appendChild(card);
+      });
+    }
+
+    // Initialize
+    document.getElementById('updateDate').textContent = new Date().toLocaleDateString();
+    updateStats();
+    renderCourt();
+    renderLeaderboard();
+    initChart();
+
+    // Close modal on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (adminPanel && adminPanel.classList.contains('active')) {
+          closeAdminPanel();
+        } else if (!document.getElementById('modal').classList.contains('hidden')) {
+          closeModal();
+        }
+      }
+    });
+
+    // Close modal on backdrop click
+    document.getElementById('modal').addEventListener('click', (e) => {
+      if (e.target.id === 'modal') closeModal();
+    });
+
+    // Admin Panel Functionality
+    const ADMIN_PASSWORD = "admin1234";
+    const adminPanel = document.getElementById('adminPanel');
+    const passwordModal = document.getElementById('passwordModal');
+    const adminToggle = document.getElementById('adminToggle');
+    const adminClose = document.getElementById('adminClose');
+    const playerManagement = document.getElementById('playerManagement');
+
+    // Check if admin elements exist
+    if (!adminPanel || !adminClose) {
+      console.error('Critical admin elements not found!');
+    }
+
+    // Admin access control
+    adminToggle.addEventListener('click', () => {
+      passwordModal.classList.add('active');
+    });
+
+    document.getElementById('cancelPassword').addEventListener('click', () => {
+      passwordModal.classList.remove('active');
+      document.getElementById('adminPassword').value = '';
+    });
+
+    document.getElementById('submitPassword').addEventListener('click', () => {
+      const password = document.getElementById('adminPassword').value;
+      if (password === ADMIN_PASSWORD) {
+        passwordModal.classList.remove('active');
+        adminPanel.classList.add('active');
+        document.getElementById('adminPassword').value = '';
+        renderPlayerManagement();
+      } else {
+        alert('Incorrect password!');
+        document.getElementById('adminPassword').value = '';
+      }
+    });
+
+    // Function to close admin panel
+    function closeAdminPanel() {
+      if (adminPanel) {
+        adminPanel.classList.remove('active');
+      }
+    }
+
+    // Admin close button functionality
+    if (adminClose) {
+      adminClose.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeAdminPanel();
+      });
+    } else {
+      console.error('Admin close button not found!');
+    }
+
+    // Alternative close method using event delegation
+    document.addEventListener('click', (e) => {
+      if (e.target && e.target.id === 'adminClose') {
+        e.preventDefault();
+        e.stopPropagation();
+        closeAdminPanel();
+      }
+    });
+
+    // Close admin panel on backdrop click
+    if (adminPanel) {
+      adminPanel.addEventListener('click', (e) => {
+        if (e.target === adminPanel) {
+          closeAdminPanel();
+        }
+      });
+    }
+
+    // Remove duplicate escape key handler - already handled above
+
+    // Password modal enter key
+    document.getElementById('adminPassword').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('submitPassword').click();
+      }
+    });
+
+    // Render player management interface
+    function renderPlayerManagement() {
+      playerManagement.innerHTML = '';
+      
+      players.forEach((player, index) => {
+        const playerCard = document.createElement('div');
+        playerCard.className = 'admin-card';
+        playerCard.innerHTML = `
+          <div class="admin-form">
+            <input type="text" value="${player.name}" class="admin-input player-name-input" data-id="${player.id}" placeholder="Player Name">
+            <input type="text" value="${player.team}" class="admin-input player-team-input" data-id="${player.id}" placeholder="Team">
+            <input type="number" value="${player.assists}" class="admin-input player-assists-input" data-id="${player.id}" min="0" placeholder="Assists">
+            <input type="url" value="${player.image || ''}" class="admin-input player-image-input" data-id="${player.id}" placeholder="Image URL">
+            <button class="admin-btn btn-update" onclick="updatePlayer('${player.id}')">Update</button>
+            <button class="admin-btn btn-delete" onclick="deletePlayer('${player.id}')">Delete</button>
+          </div>
+        `;
+        playerManagement.appendChild(playerCard);
+      });
+    }
+
+    // Update player function
+    function updatePlayer(playerId) {
+      const playerIndex = players.findIndex(p => p.id === playerId);
+      if (playerIndex === -1) return;
+
+      const nameInput = document.querySelector(`.player-name-input[data-id="${playerId}"]`);
+      const teamInput = document.querySelector(`.player-team-input[data-id="${playerId}"]`);
+      const assistsInput = document.querySelector(`.player-assists-input[data-id="${playerId}"]`);
+      const imageInput = document.querySelector(`.player-image-input[data-id="${playerId}"]`);
+
+      const newName = nameInput.value.trim();
+      const newTeam = teamInput.value.trim();
+      const newAssists = parseInt(assistsInput.value) || 0;
+      const newImage = imageInput.value.trim() || `https://ui-avatars.com/api/?name=${encodeURIComponent(newName)}&background=random`;
+
+      if (!newName) {
+        alert('Player name cannot be empty!');
+        return;
+      }
+
+      if (newAssists < 0) {
+        alert('Assists cannot be negative!');
+        return;
+      }
+
+      // Update player data
+      players[playerIndex] = {
+        ...players[playerIndex],
+        name: newName,
+        team: newTeam,
+        assists: newAssists,
+        image: newImage
+      };
+
+      // Update the main dashboard
+      updateStats();
+      renderCourt();
+      renderLeaderboard();
+
+      // Show success feedback
+      const updateBtn = document.querySelector(`.btn-update[onclick="updatePlayer('${playerId}')"]`);
+      const originalText = updateBtn.textContent;
+      updateBtn.textContent = '✓ Updated!';
+      updateBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+      
+      setTimeout(() => {
+        updateBtn.textContent = originalText;
+        updateBtn.style.background = '';
+      }, 2000);
+    }
+
+    // Delete player function
+    function deletePlayer(playerId) {
+      if (confirm('Are you sure you want to delete this player?')) {
+        const playerIndex = players.findIndex(p => p.id === playerId);
+        if (playerIndex === -1) return;
+
+        const playerName = players[playerIndex].name;
+        players.splice(playerIndex, 1);
+
+        // Update the main dashboard
+        updateStats();
+        renderCourt();
+        renderLeaderboard();
+        renderPlayerManagement();
+
+        // Show success feedback
+        alert(`${playerName} has been deleted successfully!`);
+      }
+    }
+
+    // Add new player functionality
+    document.getElementById('addNewPlayer').addEventListener('click', () => {
+      const nameInput = document.getElementById('newPlayerName');
+      const teamInput = document.getElementById('newPlayerTeam');
+      const assistsInput = document.getElementById('newPlayerAssists');
+      const imageInput = document.getElementById('newPlayerImage');
+
+      const name = nameInput.value.trim();
+      const team = teamInput.value.trim();
+      const assists = parseInt(assistsInput.value) || 0;
+      const image = imageInput.value.trim() || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+
+      // Validation
+      if (!name) {
+        alert('Player name is required!');
+        nameInput.focus();
+        return;
+      }
+
+      if (assists < 0) {
+        alert('Assists cannot be negative!');
+        assistsInput.focus();
+        return;
+      }
+
+      // Check if player already exists
+      if (players.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+        alert('A player with this name already exists!');
+        nameInput.focus();
+        return;
+      }
+
+      // Add new player
+      const newPlayer = {
+        id: 'player_' + Date.now(),
+        name: name,
+        team: team || 'Unknown Team',
+        assists: assists,
+        image: image,
+        color: `hsl(${Math.random() * 360}, 70%, 60%)`
+      };
+
+      players.push(newPlayer);
+
+      // Update the main dashboard
+      updateStats();
+      renderCourt();
+      renderLeaderboard();
+      renderPlayerManagement();
+
+      // Clear form
+      nameInput.value = '';
+      teamInput.value = '';
+      assistsInput.value = '';
+      imageInput.value = '';
+
+      // Show success feedback
+      const addBtn = document.getElementById('addNewPlayer');
+      const originalText = addBtn.textContent;
+      addBtn.textContent = '✓ Added!';
+      addBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+      
+      setTimeout(() => {
+        addBtn.textContent = originalText;
+        addBtn.style.background = '';
+      }, 2000);
+
+      alert(`${name} has been added successfully!`);
+    });
+
+    // Enter key support for add player form
+    document.getElementById('newPlayerName').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') document.getElementById('addNewPlayer').click();
+    });
+
+    document.getElementById('newPlayerTeam').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') document.getElementById('addNewPlayer').click();
+    });
+
+    document.getElementById('newPlayerAssists').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') document.getElementById('addNewPlayer').click();
+    });
+  </script>
+</body>
+</html>
